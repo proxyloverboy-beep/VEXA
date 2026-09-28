@@ -26,11 +26,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         status = findViewById(R.id.status)
         val listen = findViewById<Button>(R.id.listen)
         tts = TextToSpeech(this, this)
-
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 10)
         }
-
         speech = SpeechRecognizer.createSpeechRecognizer(this)
         listen.setOnClickListener { listenNow() }
         status.text = "VEXA ONLINE\nTap the button and speak"
@@ -38,8 +36,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onInit(result: Int) {
         if (result == TextToSpeech.SUCCESS) {
-            tts.language = Locale("hi", "IN")
-            tts.setSpeechRate(0.95f)
+            val preferred = listOf(Locale("hi", "IN"), Locale("en", "IN"), Locale.US)
+            for (locale in preferred) {
+                if (tts.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) {
+                    tts.language = locale
+                    break
+                }
+            }
+            tts.setSpeechRate(0.92f)
+            tts.setPitch(1.02f)
         }
     }
 
@@ -58,12 +63,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "hi-IN")
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "VEXA ko command dijiye")
         }
         speech.setRecognitionListener(object : android.speech.RecognitionListener {
             override fun onResults(results: Bundle?) {
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
-                if (text.isBlank()) reply("Sir, mujhe command clear nahi mili.") else handleCommand(text)
+                if (text.isBlank()) reply("Sir, mujhe command clear nahi mili. Dobara boliye.") else handleCommand(text)
             }
             override fun onError(error: Int) { reply("Sir, command clear nahi mili. Dobara boliye.") }
             override fun onReadyForSpeech(params: Bundle?) {}
@@ -80,61 +84,31 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun handleCommand(command: String) {
         val c = command.lowercase(Locale.getDefault()).trim()
         when {
-            c.contains("vexa") || c.contains("hello") || c.contains("namaste") ->
-                reply("Yes sir, VEXA online. Aapki command ready hai.")
-
-            c.contains("heat") || c.contains("garam") || c.contains("temperature") || c.contains("tapman") ->
-                checkTemperature()
-
+            c.contains("heat") || c.contains("garam") || c.contains("temperature") || c.contains("tapman") -> checkTemperature()
             c.contains("camera") || c.contains("कैमरा") -> openCamera()
-
-            c.contains("whatsapp") -> openPackage("com.whatsapp", "Sir, WhatsApp khol raha hoon.")
-
-            c.contains("youtube") -> openPackage("com.google.android.youtube", "Sir, YouTube khol raha hoon.")
-
-            c.contains("chrome") || c.contains("browser") -> openPackage("com.android.chrome", "Sir, Chrome khol raha hoon.")
-
-            c.contains("wifi") || c.contains("wi-fi") -> openSettings(Settings.ACTION_WIFI_SETTINGS, "Sir, Wi-Fi settings khol raha hoon.")
-
-            c.contains("bluetooth") -> openSettings(Settings.ACTION_BLUETOOTH_SETTINGS, "Sir, Bluetooth settings khol raha hoon.")
-
-            c.contains("battery") || c.contains("battery kitna") || c.contains("charge") -> checkBattery()
-
+            c.contains("whatsapp") -> openPackage("com.whatsapp", "Haan sir, WhatsApp kholti hoon.")
+            c.contains("youtube") -> openPackage("com.google.android.youtube", "Haan sir, YouTube kholti hoon.")
+            c.contains("chrome") || c.contains("browser") -> openPackage("com.android.chrome", "Haan sir, Chrome kholti hoon.")
+            c.contains("wifi") || c.contains("wi-fi") -> openSettings(Settings.ACTION_WIFI_SETTINGS, "Theek hai sir, Wi-Fi settings kholti hoon.")
+            c.contains("bluetooth") -> openSettings(Settings.ACTION_BLUETOOTH_SETTINGS, "Theek hai sir, Bluetooth settings kholti hoon.")
+            c.contains("battery") || c.contains("charge") -> checkBattery()
             c.startsWith("call ") || c.startsWith("phone karo ") || c.contains("call karo") -> {
                 val number = c.replace("call karo", "").replace("phone karo", "").replace("call", "").trim()
-                if (number.matches(Regex("[0-9 +()-]{6,}"))) {
-                    dial(number, "Sir, dialer khol raha hoon.")
-                } else reply("Sir, call ke liye number boliye. Main pehle dialer kholunga.")
+                if (number.matches(Regex("[0-9 +()-]{6,}"))) dial(number) else reply("Sir, kis number par call karni hai?")
             }
-
-            c.contains("meaning") || c.contains("matlab") || c.contains("arth") ->
-                reply("Sir, jis word ya sentence ka matlab chahiye, woh dobara clearly bol dijiye.")
-
-            c.contains("phone kholo") || c.contains("phone open") || c.contains("unlock") ->
-                reply("Sir, security ki wajah se VEXA phone ka lock bypass nahi karega. Main allowed apps aur settings voice se khol sakta hoon.")
-
-            else -> reply("Sir, command mili: $command. Is command ka action abhi VEXA mein add karna baaki hai.")
+            c.contains("meaning") || c.contains("matlab") || c.contains("arth") -> reply("Haan sir, word ya sentence bataiye, main simple Hindi mein samjha deti hoon.")
+            c.contains("hello") || c.contains("namaste") || c == "vexa" -> reply("Haan sir, boliye.")
+            else -> reply("Haan sir, maine suna. Is kaam ko karne ke liye mujhe thoda aur detail chahiye.")
         }
     }
 
     private fun checkTemperature() {
-        // Android does not expose a BATTERY_PROPERTY_TEMPERATURE constant.
-        // Read the standard temperature value from the battery status broadcast instead.
         val batteryIntent = registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val raw = batteryIntent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1) ?: -1
-        val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, 10) ?: 10
-
-        if (raw <= 0 || scale <= 0) {
-            reply("Sir, phone temperature ki reading available nahi hai.")
-            return
-        }
-
-        val temp = (raw.toFloat() / scale.toFloat())
-        if (temp >= 40f) {
-            reply("Sir, aapka phone heat ho raha hai. Temperature ${String.format(Locale.US, "%.1f", temp)} degree Celsius hai. Thoda rest dena better hoga.")
-        } else {
-            reply("Sir, phone temperature ${String.format(Locale.US, "%.1f", temp)} degree Celsius hai. Abhi normal range mein lag raha hai.")
-        }
+        if (raw <= 0) { reply("Sir, phone temperature ki reading available nahi hai."); return }
+        val temp = raw / 10f
+        if (temp >= 40f) reply("Sir, aapka phone heat ho raha hai. Temperature ${String.format(Locale.US, "%.1f", temp)} degree hai. Thoda rest dena better rahega.")
+        else reply("Sir, temperature ${String.format(Locale.US, "%.1f", temp)} degree hai. Abhi theek hai.")
     }
 
     private fun checkBattery() {
@@ -145,32 +119,22 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun openPackage(pkg: String, message: String) {
         val launch = packageManager.getLaunchIntentForPackage(pkg)
-        if (launch != null) {
-            reply(message)
-            startActivity(launch)
-        } else reply("Sir, ye app phone mein installed nahi mil raha.")
+        if (launch != null) { startActivity(launch); speak(message) }
+        else reply("Sir, ye app phone mein installed nahi mil raha.")
     }
 
     private fun openCamera() {
-        try {
-            reply("Sir, camera khol raha hoon.")
-            startActivity(Intent("android.media.action.IMAGE_CAPTURE"))
-        } catch (_: Exception) {
-            reply("Sir, camera open nahi ho paya.")
-        }
+        try { startActivity(Intent("android.media.action.IMAGE_CAPTURE")); speak("Haan sir, camera kholti hoon.") }
+        catch (_: Exception) { reply("Sir, camera open nahi ho paya.") }
     }
 
     private fun openSettings(action: String, message: String) {
-        try {
-            reply(message)
-            startActivity(Intent(action))
-        } catch (_: Exception) {
-            reply("Sir, settings open nahi ho payi.")
-        }
+        try { startActivity(Intent(action)); speak(message) }
+        catch (_: Exception) { reply("Sir, settings open nahi ho payi.") }
     }
 
-    private fun dial(number: String, message: String) {
-        reply(message)
+    private fun dial(number: String) {
+        speak("Haan sir, dialer kholti hoon.")
         startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode(number))))
     }
 
