@@ -36,28 +36,19 @@
     <TextView
         android:id="@+id/status"
         android:layout_width="match_parent"
-        android:layout_height="170dp"
+        android:layout_height="200dp"
         android:gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="19sp"
         android:padding="20dp"
-        android:layout_marginTop="35dp"
-        android:layout_marginBottom="25dp"
+        android:layout_marginTop="45dp"
         android:background="#10161D" />
-
-    <Button
-        android:id="@+id/listen"
-        android:layout_width="240dp"
-        android:layout_height="64dp"
-        android:text="🎙  SPEAK TO VEXA"
-        android:textSize="16sp"
-        android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hindi + English • Voice commands • Phone monitor"
+        android:text="Say “Hey VEXA” — no button required"
         android:textColor="#71808C"
-        android:textSize="12sp"
-        android:layout_marginTop="22dp" />
+        android:textSize="13sp"
+        android:layout_marginTop="24dp" />
 </LinearLayout>
