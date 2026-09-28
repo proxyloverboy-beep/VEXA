@@ -118,15 +118,23 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun checkTemperature() {
-        val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
-        val raw = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_TEMPERATURE)
-        if (raw <= 0) {
-            reply("Sir, phone temperature sensor ki reading available nahi hai.")
+        // Android does not expose a BATTERY_PROPERTY_TEMPERATURE constant.
+        // Read the standard temperature value from the battery status broadcast instead.
+        val batteryIntent = registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val raw = batteryIntent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1) ?: -1
+        val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, 10) ?: 10
+
+        if (raw <= 0 || scale <= 0) {
+            reply("Sir, phone temperature ki reading available nahi hai.")
             return
         }
-        val temp = raw / 10f
-        if (temp >= 40f) reply("Sir, aapka phone heat ho raha hai. Temperature ${temp} degree Celsius hai. Thoda rest dena better hoga.")
-        else reply("Sir, phone temperature ${temp} degree Celsius hai. Abhi normal range mein lag raha hai.")
+
+        val temp = (raw.toFloat() / scale.toFloat())
+        if (temp >= 40f) {
+            reply("Sir, aapka phone heat ho raha hai. Temperature ${String.format(Locale.US, "%.1f", temp)} degree Celsius hai. Thoda rest dena better hoga.")
+        } else {
+            reply("Sir, phone temperature ${String.format(Locale.US, "%.1f", temp)} degree Celsius hai. Abhi normal range mein lag raha hai.")
+        }
     }
 
     private fun checkBattery() {
