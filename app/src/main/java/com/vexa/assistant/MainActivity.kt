@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Button
 import android.widget.TextView
 
 class MainActivity : Activity() {
@@ -15,7 +14,6 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.status)
-        findViewById<Button>(R.id.listen).setOnClickListener { startVexaService() }
         val permissions = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CALL_PHONE, Manifest.permission.READ_CONTACTS)
             .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (permissions.isNotEmpty()) requestPermissions(permissions.toTypedArray(), 100) else startVexaService()
