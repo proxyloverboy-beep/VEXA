@@ -7,6 +7,14 @@
     android:padding="28dp"
     android:background="#05070A">
 
+    <ImageView
+        android:id="@+id/vexaLogo"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:src="@drawable/vexa_logo"
+        android:contentDescription="VEXA logo"
+        android:scaleType="centerCrop" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -14,7 +22,8 @@
         android:textColor="#FFFFFF"
         android:textSize="46sp"
         android:textStyle="bold"
-        android:letterSpacing="0.08" />
+        android:letterSpacing="0.08"
+        android:layout_marginTop="10dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -32,7 +41,7 @@
         android:textColor="#FFFFFF"
         android:textSize="19sp"
         android:padding="20dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="35dp"
         android:layout_marginBottom="25dp"
         android:background="#10161D" />
 
